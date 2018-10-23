@@ -8,9 +8,11 @@ RUN go install .
 
 # ==============================================================================
 
-FROM scratch
+FROM launcher.gcr.io/google/debian9:latest
 
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/bin/k8s-oom-monitor /go/bin/k8s-oom-monitor
+RUN apt-get update && \
+    apt-get install -y ca-certificates
 
-ENTRYPOINT ["/go/bin/k8s-oom-monitor"]
+COPY --from=builder /go/bin/k8s-oom-monitor /opt/k8s-oom-monitor
+
+ENTRYPOINT ["/opt/k8s-oom-monitor"]
