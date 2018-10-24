@@ -85,7 +85,7 @@ This Go application has less than 100 lines of code but provides a critical moni
 
 ### Uninstall
 
-To remove the application and all the authorizations it creates in the install tutorial you can use the following commands:
+To remove the application and all the authorizations it creates in the install tutorial use the following commands:
 
 ```
 kubectl delete deployment k8s-oom-monitor
