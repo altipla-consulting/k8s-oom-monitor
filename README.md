@@ -12,39 +12,87 @@ This Go application has less than 100 lines of code but provides a critical moni
 2. In the sidebar visit the _Incoming Webhooks_ section and enable it with the switch On/Off in the top-right of the screen.
 3. In the same sidebar move to _Install App_ and install the application in your workspace. It will ask for permissions and you can select the destination channel.
 4. Copy the _Webhook URL for Your Workspace_ when you return to the install page after succesfully authorizing the new application.
-5. Save the example deployment configuration to `k8s-oom-monitor.yaml` replacing the URL with the webhook URL you copied in step 4.
+5. Save the example deployment configuration to `k8s-oom-monitor.yaml` replacing the URL of `SLACK_WEBHOOK` with the webhook URL you copied in step 4.
 
-```yaml
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: k8s-oom-monitor
-spec:
-  replicas: 1
-  revisionHistoryLimit: 10
-  strategy:
-    rollingUpdate:
-      maxUnavailable: 0
-  template:
+    ```yaml
+    apiVersion: v1
+    kind: ServiceAccount
     metadata:
-      labels:
-        app: k8s-oom-monitor
+      name: k8s-oom-monitor
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: ClusterRole
+    metadata:
+      name: k8s-oom-monitor
+    rules:
+    - apiGroups: ['']
+      resources:
+      - events
+      verbs:
+      - watch
+    ---
+    apiVersion: rbac.authorization.k8s.io/v1beta1
+    kind: RoleBinding
+    metadata:
+      name: k8s-oom-monitor
+    subjects:
+    - kind: ServiceAccount
+      name: k8s-oom-monitor
+    roleRef:
+      kind: ClusterRole
+      name: k8s-oom-monitor
+      apiGroup: rbac.authorization.k8s.io
+    ---
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    metadata:
+      name: k8s-oom-monitor
     spec:
-      containers:
-      - name: k8s-oom-monitor
-        image: altipla/k8s-oom-monitor:v1.0.0
-        env:
-        - name: SLACK_WEBHOOK
-          value: https://REPLACE_URL/WITH_THE_REAL_ONE
-        resources:
-          requests:
-            cpu: 10m
-            memory: 50Mi
-          limits:
-            memory: 50Mi
-```
+      replicas: 1
+      revisionHistoryLimit: 10
+      strategy:
+        rollingUpdate:
+          maxUnavailable: 0
+      template:
+        metadata:
+          labels:
+            app: k8s-oom-monitor
+        spec:
+          serviceAccount: k8s-oom-monitor
+          containers:
+          - name: k8s-oom-monitor
+            image: altipla/k8s-oom-monitor:v1.0.0
+            env:
+            - name: SLACK_WEBHOOK
+              value: https://REPLACE_URL/WITH_THE_REAL_ONE
+            resources:
+              requests:
+                cpu: 10m
+                memory: 50Mi
+              limits:
+                memory: 50Mi
+    ```
 
-6. Deploy the file to the Kubernetes cluster you want to monitorize: `kubectl apply -f k8s-oom-monitor.yaml`
+6. If you are working with GKE (Google Kubernetes Engine) you will need to authorize your own account to have admin permissions to be able to create the ClusterRole the app needs. You can configure the permissions with the following command:
+
+    ```shell
+    kubectl create clusterrolebinding cluster-admin-binding \
+      --clusterrole cluster-admin --user $(gcloud config get-value account)
+    ```
+
+7. Deploy the file to the Kubernetes cluster you want to monitorize: `kubectl apply -f k8s-oom-monitor.yaml`
+
+
+### Uninstall
+
+To remove the application and all the authorizations it creates in the install tutorial you can use the following commands:
+
+```
+kubectl delete deployment k8s-oom-monitor
+kubectl delete clusterrole k8s-oom-monitor
+kubectl delete rolebinding k8s-oom-monitor
+kubectl delete serviceaccount k8s-oom-monitor
+```
 
 
 ### Contributing
