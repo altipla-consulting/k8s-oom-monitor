@@ -12,7 +12,7 @@ This Go application has less than 100 lines of code but provides a critical moni
 2. In the sidebar visit the _Incoming Webhooks_ section and enable it with the switch On/Off in the top-right of the screen.
 3. In the same sidebar move to _Install App_ and install the application in your workspace. It will ask for permissions and you can select the destination channel.
 4. Copy the _Webhook URL for Your Workspace_ when you return to the install page after succesfully authorizing the new application.
-5. Save the example deployment configuration to `k8s-oom-monitor.yaml` replacing the URL of `SLACK_WEBHOOK` with the webhook URL you copied in step 4. You have a copy as a standalone file [here](example/k8s-oom-monitor.yml).
+5. Save the example deployment configuration to `k8s-oom-monitor.yaml` replacing the URL of `SLACK_WEBHOOK` with the webhook URL you copied in step 4. You have a copy as a [standalone file here](example/k8s-oom-monitor.yml).
 
     ```yaml
     apiVersion: v1
