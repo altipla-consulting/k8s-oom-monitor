@@ -3,7 +3,7 @@
 
 Monitor that alerts to Slack when a Kubernetes pod is killed with OutOfMemory (OOM).
 
-This Go application has less than 100 lines of code but provides a critical monitoring feature for our infrastructure.
+This Go application has less than 150 lines of code but provides a critical monitoring feature for our infrastructure.
 
 
 ### Install

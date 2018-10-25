@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ericchiang/k8s"
 	corev1 "github.com/ericchiang/k8s/apis/core/v1"
@@ -34,24 +36,47 @@ func run() error {
 		return err
 	}
 
+	notified := map[string]bool{}
+	for {
+		if err := watch(ctx, client, notified); err != nil {
+			log.WithField("error", err.Error()).Error("Listening failed, retrying in 5 seconds")
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	return nil
+}
+
+func watch(ctx context.Context, client *k8s.Client, notified map[string]bool) error {
 	var event corev1.Event
 	watcher, err := client.Watch(ctx, "default", &event)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot open the watcher: %v", err)
 	}
 	defer watcher.Close()
 
 	log.WithField("webhook", os.Getenv("SLACK_WEBHOOK")).Println("Watching events to detect OOM pods")
 	for {
 		if _, err := watcher.Next(&event); err != nil {
-			return err
+			if err == io.EOF {
+				return nil
+			}
+
+			return fmt.Errorf("error while watching the next event: %v", err)
 		}
 
 		if event.GetReason() != "OOMKilling" {
 			continue
 		}
 
+		name := event.Metadata.GetName()
+		if notified[name] {
+			continue
+		}
+		notified[name] = true
+
 		log.WithFields(log.Fields{
+			"name":    name,
 			"node":    event.InvolvedObject.GetName(),
 			"message": event.GetMessage(),
 		}).Info("OOM detected")
@@ -68,19 +93,17 @@ func run() error {
 		}
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(msg); err != nil {
-			return err
+			return fmt.Errorf("cannot serialize slack request: %v", err)
 		}
 
 		resp, err := http.Post(os.Getenv("SLACK_WEBHOOK"), "application/json", &buf)
 		if err != nil {
-			log.WithField("error", err.Error()).Error("Cannot notify Slack right now")
-			continue
+			return fmt.Errorf("cannot notify slack: %v", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			log.WithField("status", resp.Status).Error("Cannot notify Slack right now")
-			continue
+			return fmt.Errorf("bad slack status: %v", resp.Status)
 		}
 	}
 
