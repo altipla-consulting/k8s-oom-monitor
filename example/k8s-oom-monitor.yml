@@ -44,7 +44,7 @@ spec:
       serviceAccount: k8s-oom-monitor
       containers:
       - name: k8s-oom-monitor
-        image: altipla/k8s-oom-monitor:v1.0.0
+        image: altipla/k8s-oom-monitor:v1.0.1
         env:
         - name: SLACK_WEBHOOK
           value: https://REPLACE_URL/WITH_THE_REAL_ONE
