@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-oom-monitor
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: k8s-oom-monitor
+rules:
+- apiGroups: ['']
+  resources:
+  - events
+  verbs:
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: k8s-oom-monitor
+subjects:
+- kind: ServiceAccount
+  name: k8s-oom-monitor
+roleRef:
+  kind: ClusterRole
+  name: k8s-oom-monitor
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: k8s-oom-monitor
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: k8s-oom-monitor
+    spec:
+      serviceAccount: k8s-oom-monitor
+      containers:
+      - name: k8s-oom-monitor
+        image: altipla/k8s-oom-monitor:v1.0.0
+        env:
+        - name: SLACK_WEBHOOK
+          value: https://REPLACE_URL/WITH_THE_REAL_ONE
+        resources:
+          requests:
+            cpu: 10m
+            memory: 50Mi
+          limits:
+            memory: 50Mi
