@@ -61,7 +61,7 @@ This Go application has less than 150 lines of code but provides a critical moni
           serviceAccount: k8s-oom-monitor
           containers:
           - name: k8s-oom-monitor
-            image: altipla/k8s-oom-monitor:v1.0.1
+            image: altipla/k8s-oom-monitor:v1.0.2
             env:
             - name: SLACK_WEBHOOK
               value: https://REPLACE_URL/WITH_THE_REAL_ONE
