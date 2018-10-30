@@ -36,6 +36,8 @@ func run() error {
 		return err
 	}
 
+	log.WithField("webhook", os.Getenv("SLACK_WEBHOOK")).Println("Watching events to detect OOM pods")
+	
 	notified := map[string]bool{}
 	for {
 		if err := watch(ctx, client, notified); err != nil {
@@ -55,7 +57,6 @@ func watch(ctx context.Context, client *k8s.Client, notified map[string]bool) er
 	}
 	defer watcher.Close()
 
-	log.WithField("webhook", os.Getenv("SLACK_WEBHOOK")).Println("Watching events to detect OOM pods")
 	for {
 		if _, err := watcher.Next(&event); err != nil {
 			if err == io.EOF {
